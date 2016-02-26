@@ -26,10 +26,10 @@ function displayTop()
 	Screen.fillRect(cX*13+10,cX*13+8,cY*20-15,cY*20,dgray,TOP_SCREEN)
 	for y=1, 12 do
 	
-	Screen.debugPrint(3,y*20-15,y+sY,black,TOP_SCREEN)
-			if lines[y] then
+	Screen.debugPrint(0,y*20-15,y+sY,black,TOP_SCREEN)
+			if lines[y+sY] then
 		for x=1 ,28 do
-			if lines[y][x] then
+			if lines[y+sY][x+sX] then
 				displayChar(x,y,lines[y+sY][x+sX])
 			end end
 		end
@@ -39,7 +39,7 @@ end
 function moveVertical()
 	if (cX+sX)>#lines[cY+sY] then
 		cX=#lines[cY+sY]-sX		--if the line you move to is shorter, moves cursor to end of line
-		if cX<0 then sX=#lines[cY+sY] cX=0 end	--moves screen to keep cursor on screen (if needed)
+		if cX<1 then sX=#lines[cY+sY] cX=1 end	--moves screen to keep cursor on screen (if needed)
 	end
 end
 
@@ -50,6 +50,7 @@ function moveUp()
 		else
 			cY = cY-1
 		end
+	moveVertical()
 	return true
 	else
 		cX=1 sX=0		--if its the first line, it moves the cursor to the beginning of it
@@ -57,13 +58,12 @@ function moveUp()
 end
 
 function moveDown()
-	if lines[curY+1] then		--cant move cursor past end of file		
+	if lines[cY+sY+1] then		--cant move cursor past end of file		
 		if cY==11 then		--cant move cursor past edge of screen
 			sY = sY+1	--moves screen, keeps cursor still
 		else
 			cY = cY+1	--moves cursor, keeps screen still
 		end
-	curY=curY+1
 	moveVertical()
 
 	return true end			--reports it successfully moved down/wasn't at end of the file
@@ -95,8 +95,10 @@ function moveRight() --moves the cursor right
 		else
 			cX = cX+1 		--otherwise move cursor right
 		end
-	else if moveDown() then sX=0 cX=1 end	--if at the end of the line tries to move down.  if successful sets x to beginning of line
+	elseif moveDown() then sX=0 cX=1	--if at the end of the line tries to move down.  if successful sets x to beginning of line
+	else return
 	end
+	return true
 end
 			
 
@@ -110,6 +112,25 @@ function typeChar(char)
 		moveRight()
 	end
 end
+
+function backspace()
+	if cX+sX>1 then
+		table.remove(lines[sY+cY],cX+sX-1) moveLeft()
+	elseif cX+sX==1 and cY+sY~=1 then
+		local _=sY+cY
+		moveLeft()
+		for i=1,#lines[_] do
+			table.insert(lines[_-1],lines[_][i])
+		end
+		table.remove(lines,_)
+	end
+end
+function typeDelete()
+	if moveRight() then backspace() end 	--delete is just backspace after pressing right -that is, if pressing right did anything
+end
+
+
+
 
 function typeEnter()
 	table.insert(lines,sY+cY+1,{})
@@ -130,14 +151,6 @@ function Keyboard()
 	local keyset --pointer to beggining of character set for lowercase and UPPERCASE for entire keyboard
 	local ix,iy --integer x and y, lightly processed coordinate values for faster (cleaner?) code
 
-
-	if Controls.check(pad,KEY_DDOWN) then
-		curY=curY+1 end
-	if Controls.check(pad,KEY_DUP) then
-		curY=curY-1 end
-
-
-
 	
 	local keys = {"`1234567890-=",[[qwertyuiop[]\]],"asdfghjkl;'","zxcvbnm,./","~!@#$%^&*()_+",
 		"QWERTYUIOP{}|",[[ASDFGHJKL:"]],"ZXCVBNM<>?","TAB SPC","BCK DEL"}
@@ -154,8 +167,20 @@ function Keyboard()
 	if Controls.check(pad,KEY_DUP) then
 	moveUp()
 	end
+	if Controls.check(pad,KEY_DDOWN) then
+	moveDown()
+	end
+	if Controls.check(pad,KEY_DRIGHT) then
+	moveRight()
+	end
 	if Controls.check(pad,KEY_DLEFT) then
 	moveLeft()
+	end
+	if Controls.check(pad,KEY_X) then
+	backspace()
+	end
+	if Controls.check(pad,KEY_Y) then
+	typeDelete()
 	end
 
 	local inputChar
@@ -220,7 +245,7 @@ end
 
 
 
-aa
+
 
 
 
