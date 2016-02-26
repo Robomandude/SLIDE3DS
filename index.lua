@@ -1,7 +1,7 @@
 red = Color.new(255,0,0)
 blue = Color.new(0,0,255)
 green = Color.new(0,200,0)
-white = Color.new(200,200,200)
+white = Color.new(230,230,230)
 black = Color.new(0,0,0)
 dgray = Color.new(50,50,50)
 gray = Color.new(150,150,150)
@@ -16,15 +16,17 @@ curX=1 curY=1		--where the cursor is in the file.  simply screen+cursor location
 dispX=1 dispY=1
 
 function displayChar(x,y,char)
-	Screen.debugPrint(x*13+10,y*20-15,char,black,TOP_SCREEN)
+	Screen.debugPrint(x*13+10,y*20-15,char or "",black,TOP_SCREEN)
 	end
 
 
 
 function displayTop()
 	Screen.fillRect(0,400,0,240,white,TOP_SCREEN)
+	Screen.fillRect(cX*13+10,cX*13+8,cY*20-15,cY*20,dgray,TOP_SCREEN)
 	for y=1, 12 do
-	Screen.debugPrint(3,y*20-15,y,black,TOP_SCREEN)
+	
+	Screen.debugPrint(3,y*20-15,y+sY,black,TOP_SCREEN)
 			if lines[y] then
 		for x=1 ,28 do
 			if lines[y][x] then
@@ -35,21 +37,22 @@ function displayTop()
 end
 
 function moveVertical()
-	if (cX+sX)>#lines[curY] then
-		cX=#lines[curY]-sX		--if the line you move to is shorter, moves cursor to end of line
+	if (cX+sX)>#lines[cY+sY] then
+		cX=#lines[cY+sY]-sX		--if the line you move to is shorter, moves cursor to end of line
 		if cX<0 then sX=#lines[cY+sY] cX=0 end	--moves screen to keep cursor on screen (if needed)
 	end
 end
 
 function moveUp()
-	if lines[curY-1] then		--cant move cursor to before beggining of file
+	if lines[cY+sY-1] then		--cant move cursor to before beggining of file
 		if cY==1 then
 			sY = sY-1
 		else
 			cY = cY-1
 		end
+	return true
 	else
-		cX=0 sX=0		--if its the first line, it moves the cursor to the beginning of it
+		cX=1 sX=0		--if its the first line, it moves the cursor to the beginning of it
 	end
 end
 
@@ -67,25 +70,42 @@ function moveDown()
 
 end
 
-
+function moveLeft()
+	if cX==1 then
+		if sX==0 then		--if its at the beggining of the line it moves up and to the end of the line
+			if moveUp() then
+				if #lines[cY+sY]>sX+28 then
+					cX=28
+					sX=#lines[cY+sY]-28
+				elseif #lines[cY+sY]<sX then
+					sX=#lines[cY+sY]
+					cX=1
+				else cX=#lines[cY+sY]-sX+1
+				end
+			end
+		else sX=sX-1
+		end
+	else
+	cX=cX-1 end
+end
 function moveRight() --moves the cursor right
-	if lines[curY][cX+sX+1] then 		--cant move cursor past end of line
+	if lines[cY+sY][cX+sX] then 		--cant move cursor past end of line
 		if cX==28 then 			--cant move cursor past edge of screen
 			sX = sX+1 		--if end of screen move screen right and keep cursor still
 		else
 			cX = cX+1 		--otherwise move cursor right
 		end
-	else if moveDown() then sX=1 cX=0 end	--if at the end of the line tries to move down.  if successful sets x to beginning of line
+	else if moveDown() then sX=0 cX=1 end	--if at the end of the line tries to move down.  if successful sets x to beginning of line
 	end
 end
 			
 
 function typeChar(char)
 	return function() 
-		if #lines[curY]==cX+sX then
-		table.insert(lines[curY],char)
+		if #lines[sY+cY]==cX+sX then
+		table.insert(lines[sY+cY],char)
 		else
-		table.insert(lines[curY],cX+sX,char)
+		table.insert(lines[sY+cY],cX+sX,char)
 		end
 		moveRight()
 	end
@@ -94,10 +114,10 @@ end
 function typeEnter()
 	table.insert(lines,sY+cY+1,{})
 	while lines[sY+cY][sX+cX] do
-		table.insert(lines[sY+cY+1],1,table.remove(lines[sY+cY]))
+		table.insert(lines[sY+cY+1],table.remove(lines[sY+cY],sX+cX))
 	end
 	moveDown()
-	sX=1 cX=1
+	sX=0 cX=1
 end
 
 
@@ -127,6 +147,15 @@ function Keyboard()
 		keyset=5
 	else
 		keyset=1
+	end
+	if Controls.check(pad,KEY_A) then
+	typeEnter()
+	end
+	if Controls.check(pad,KEY_DUP) then
+	moveUp()
+	end
+	if Controls.check(pad,KEY_DLEFT) then
+	moveLeft()
 	end
 
 	local inputChar
@@ -173,6 +202,10 @@ function Keyboard()
 		inputChar=string.sub(keys[iy],ix,ix)
 		end
 	end
+	Screen.debugPrint(5,150,cX,white,BOTTOM_SCREEN)
+	Screen.debugPrint(5,170,cY,white,BOTTOM_SCREEN)
+	Screen.debugPrint(5,200,sX,white,BOTTOM_SCREEN)
+	Screen.debugPrint(5,220,sY,white,BOTTOM_SCREEN)
 	--if inputChar then
 	--	Screen.debugPrint(6,40,inputChar,blue,TOP_SCREEN)
 	--else
@@ -187,7 +220,7 @@ end
 
 
 
-
+aa
 
 
 
