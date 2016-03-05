@@ -11,6 +11,7 @@ TABSTOP=8
 lines={{}}
 SCREEN_WIDTH=30
 pad=Controls.read()
+pDir=""
 tx,ty,ox,oy=0,0,0,0 --Touchscreen x and y and Previous frame tx and ty
 oldpad=pad --previous frame pad state
 
@@ -33,6 +34,135 @@ function getScrLoc(x,y)
 	return x*13,y*20-15
 end
 
+function loadText(fileStream)
+	local y=1
+	local char =""
+	for i=0,io.size(fileStream) do
+		char=io.read(fileStream,i,1)
+		if char=="\n"
+		then
+			Table.insert(lines,{})
+			y=y+1
+		else
+			Table.insert(lines[y],char)
+		end
+	end
+end
+
+
+
+
+menuButton=
+{
+	New_Project= 
+		function ()
+			project=System.startKeyboard("Project Name")
+			System.currentDirectory("/3ds/SLIDE3DS/projects/")
+			if System.doesFileExist(project)
+			then
+				return "Project name taken!"
+			end
+			System.createDirectory(project)
+			
+		end
+	,
+
+	Load_Project=
+		function()
+			project=listMenu(System.listDirectory("/3ds/SLIDE3DS/projects/"))
+			if #project>0
+			then
+				System.currentDirectory("/3ds/SLIDE3DS/projects/"..project)
+				workProject()
+			else
+				return "No projects :("
+			end
+		end
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function mainMenu()
+	local menuDo =""
+	repeat
+	Screen.clear(BOTTOM_SCREEN)
+	Screen.debugPrint(5,5,white,"SLIDE3DS",BOTTOM_SCREEN)
+	Screen.debugPrint(5,20,white,"By: Roboman")
+	Screen.debugPrint(5,35,white,menuDo)
+	menuDo=listMenu({"Load_Project","New_Project","Restore_Backup"})
+	
+	menuDo=menuButton[menuDo]()
+	until false
+	end
+
+
+
+
+
+
+
+
+
+
+function listMenu(list)
+	local c=1
+	local s=0
+	while true do
+
+	oldpad=pad
+	pad=Controls.read()
+	
+	Screen.waitVblankStart()
+	Screen.refresh()
+	Screen.flip()
+	Screen.fillRect(0,400,0,240,white,TOP_SCREEN)
+		for i=1,12 do
+			if list[i+s] then
+			Screen.debugPrint(20,i*20,list[i+s],black,TOP_SCREEN)
+			end
+		end
+	Screen.debugPrint(1,c*20,"*",black,TOP_SCREEN)
+	
+	if oldpad ~= pad then
+	
+		if Controls.check(pad,KEY_DDOWN) and c+s<#list then
+			if c==12
+				then
+					s=s+1
+				else
+					c=c+1
+				end
+			
+		end
+		
+		if Controls.check(pad,KEY_DUP) and c+s>1 then
+			if c==1 then
+				s=s-1
+			else
+				c=c-1
+			end
+		end
+		
+		if Controls.check(pad,KEY_A)
+
+		then
+			return list[c+s]
+		end
+	end
+
+	end
+end
+
+
 
 function displayTop()
 	Screen.fillRect(0,400,0,240,white,TOP_SCREEN)
@@ -50,9 +180,6 @@ function displayTop()
 						Screen.fillRect(x*13+3,x*13+2,y*20-15,y*20,wwhite,TOP_SCREEN)
 					else
 						Screen.debugPrint(x*13,y*20-15,lines[y+sY][x+sX],black,TOP_SCREEN)
-						if lines[y+sY][x+sX]=="\t" then Screen.fillRect(x*13,x*13+2,y*20-
-
-15,y*20,green,TOP_SCREEN) end
 					end
 				end
 			end
@@ -186,7 +313,9 @@ function backspace()
 end
 
 function typeDelete()
-	if moveRight() then backspace() end 	--delete is just backspace after pressing right -that is, if pressing right did anything
+	if moveRight() then backspace() end 	--delete is just backspace after pressing right -that is, if pressing right did 
+
+anything
 end
 
 function tabulate(y)
@@ -231,7 +360,7 @@ function typeEnter()
 	sX=0 cX=1
 end
 
-
+mainMenu()
 
 
 function Keyboard()
@@ -245,7 +374,7 @@ function Keyboard()
 	local keys = {"`1234567890-=",[[qwertyuiop[]\]],"asdfghjkl;'","zxcvbnm,./  \t","~!@#$%^&*()_+",
 		"QWERTYUIOP{}|",[[ASDFGHJKL:"]],"ZXCVBNM<>?  \t","TAB SPC","BCK DEL"}
 
-	if Controls.check(pad,KEY_A) then
+	if Controls.check(pad,KEY_L) then
 
 		keyset=5
 	else
@@ -342,20 +471,37 @@ end
 
 
 
-while true do
-	Screen.waitVblankStart()
-	Screen.refresh()
-	oldpad=pad
-	pad = Controls.read()
-	Screen.clear(BOTTOM_SCREEN)
-	Screen.clear(TOP_SCREEN)
-	ox,oy=tx,ty
-	tx,ty=Controls.readTouch()
-	--Screen.fillRect(5,395,5,235,green,TOP_SCREEN)
-	displayTop()
-	Keyboard()
-		--Screen.debugPrint(6,6,tx,blue,TOP_SCREEN)
-		--Screen.debugPrint(6,20,ty,blue,TOP_SCREEN)
-		Screen.flip()
-	if Controls.check(pad,KEY_B) then crash() end --faster restarting in citra
+
+
+
+
+editText = function()
+
+	while true do
+	
+
+		if Controls.check(pad,KEY_START)
+		then
+			local menuDo =listMenu({"Save","Quit","Resume"})
+			if menuDo==Quit then return "Quit" end
+			mainMenu[menuDo]()
+			
+		end
+
+		Screen.waitVblankStart()
+		Screen.refresh()
+		oldpad=pad
+		pad = Controls.read()
+		Screen.clear(BOTTOM_SCREEN)
+		Screen.clear(TOP_SCREEN)
+		ox,oy=tx,ty
+		tx,ty=Controls.readTouch()
+		--Screen.fillRect(5,395,5,235,green,TOP_SCREEN)
+		displayTop()
+		Keyboard()
+			--Screen.debugPrint(6,6,tx,blue,TOP_SCREEN)
+			--Screen.debugPrint(6,20,ty,blue,TOP_SCREEN)
+			Screen.flip()
+		if Controls.check(pad,KEY_B) then crash() end --faster restarting in citra
+	end
 end
