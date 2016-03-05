@@ -10,6 +10,7 @@ size = 0
 TABSTOP=8
 lines={{}}
 SCREEN_WIDTH=30
+Screen.clear(TOP_SCREEN)
 pad=Controls.read()
 pDir=""
 tx,ty,ox,oy=0,0,0,0 --Touchscreen x and y and Previous frame tx and ty
@@ -47,33 +48,35 @@ function loadText(fileStream)
 			Table.insert(lines[y],char)
 		end
 	end
+	editText()
 end
 
 
 
 
-menuButton=
-{
+menuButton={
 	New_Project= 
 		function ()
-			project=System.startKeyboard("Project Name")
-			System.currentDirectory("/3ds/SLIDE3DS/projects/")
+			project=System.startKeyboard()
+			--System.currentDirectory("/3ds/SLIDE3DS/projects/"
 			if System.doesFileExist(project)
 			then
 				return "Project name taken!"
 			end
-			System.createDirectory(project)
+			System.createDirectory("/3ds/SLIDE3DS/projects/"..project)
 			
 		end
 	,
 
 	Load_Project=
 		function()
-			project=listMenu(System.listDirectory("/3ds/SLIDE3DS/projects/"))
+			local project=System.listDirectory("/3ds/SLIDE3DS/projects/")
 			if #project>0
 			then
-				System.currentDirectory("/3ds/SLIDE3DS/projects/"..project)
-				workProject()
+				project=listMenu(project)	--chose project in folder
+				if project then			--dont try to open nil
+					workProject(project)
+				end
 			else
 				return "No projects :("
 			end
@@ -82,9 +85,19 @@ menuButton=
 
 
 
-
-
-
+function workProject(project)
+	local curFile="_"
+	while curFile do
+	curFile=listMenu(System.listDirectory("/3ds/SLIDE3DS/projects/"..project))
+	local fileStream =io.open(curFile,FCREATE)
+		curFile=string.sub(curFile,-4)
+		if curFile==".txt" or curFile==".lua"
+		then
+			loadText(fileStream)
+		end
+	end
+end			
+	
 
 
 
@@ -95,12 +108,16 @@ function mainMenu()
 	local menuDo =""
 	repeat
 	Screen.clear(BOTTOM_SCREEN)
-	Screen.debugPrint(5,5,white,"SLIDE3DS",BOTTOM_SCREEN)
-	Screen.debugPrint(5,20,white,"By: Roboman")
-	Screen.debugPrint(5,35,white,menuDo)
+	Screen.debugPrint(5,5,"SLIDE3DS",white,BOTTOM_SCREEN)
+	Screen.debugPrint(5,20,"By: Roboman",white,BOTTOM_SCREEN)
+	if type(menuDo)~="table" then
+	--Screen.debugPrint(5,35,menuDo or "nil",white,BOTTOM_SCREEN)
+	end
+	Screen.refresh()
 	menuDo=listMenu({"Load_Project","New_Project","Restore_Backup"})
-	
+	if menuDo then
 	menuDo=menuButton[menuDo]()
+	end
 	until false
 	end
 
@@ -121,12 +138,10 @@ function listMenu(list)
 	oldpad=pad
 	pad=Controls.read()
 	
-	Screen.waitVblankStart()
-	Screen.refresh()
-	Screen.flip()
+	
 	Screen.fillRect(0,400,0,240,white,TOP_SCREEN)
 		for i=1,12 do
-			if list[i+s] then
+			if type(list[i+s])=="string" then
 			Screen.debugPrint(20,i*20,list[i+s],black,TOP_SCREEN)
 			end
 		end
@@ -158,8 +173,12 @@ function listMenu(list)
 			return list[c+s]
 		end
 	end
-
+	Screen.flip()
+	Screen.waitVblankStart()
+	Screen.refresh()
 	end
+
+
 end
 
 
@@ -265,15 +284,17 @@ function moveRight() --moves the cursor right
 			cX=cX-1
 			sX=sX+1
 		end
-	elseif moveDown() then sX=0 cX=1	--if at the end of the line tries to move down.  if successful sets x to beginning of 
+	elseif moveDown() then sX=0 cX=1	--if at the end of the line tries to move down.  if successful sets x to 
 
-line
+beginning of line
 	else return
 	end
 	return true
 end
 
-function insertChar(y,x,t)				--I use this function because specifying the end of a table does not work 
+function insertChar(y,x,t)				--I use this function because specifying the end of a table does not 
+
+work 
 						--	well, I have to not specify anything instead
 	if #lines[y]==x then
 		table.insert(lines[y],t)
@@ -313,9 +334,9 @@ function backspace()
 end
 
 function typeDelete()
-	if moveRight() then backspace() end 	--delete is just backspace after pressing right -that is, if pressing right did 
+	if moveRight() then backspace() end 	--delete is just backspace after pressing right -that is, if pressing right 
 
-anything
+did anything
 end
 
 function tabulate(y)
@@ -338,9 +359,6 @@ function tabulate(y)
 		end
 	end
 end
-
-			
-
 
 
 
@@ -371,8 +389,8 @@ function Keyboard()
 	local ix,iy --integer x and y, lightly processed coordinate values for faster (cleaner?) code
 
 	
-	local keys = {"`1234567890-=",[[qwertyuiop[]\]],"asdfghjkl;'","zxcvbnm,./  \t","~!@#$%^&*()_+",
-		"QWERTYUIOP{}|",[[ASDFGHJKL:"]],"ZXCVBNM<>?  \t","TAB SPC","BCK DEL"}
+	local keys = {"`1234567890-=","qwertyuiop[]\\","asdfghjkl;'","zxcvbnm,./  \t","~!@#$%^&*()_+",
+		"QWERTYUIOP{}|","ASDFGHJKL:\"","ZXCVBNM<>?  \t","TAB SPC","BCK DEL"}
 
 	if Controls.check(pad,KEY_L) then
 
