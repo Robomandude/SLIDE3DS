@@ -33,85 +33,17 @@ function tabulate() end
 function getScrLoc(x,y)
 	return x*13,y*20-15
 end
-
-function loadText(fileStream)
-	local y=1
-	local char =""
-	for i=0,io.size(fileStream) do
-		char=io.read(fileStream,i,1)
-		if char=="\n"
-		then
-			Table.insert(lines,{})
-			y=y+1
-		else
-			Table.insert(lines[y],char)
-		end
+function loadText(fileName)
+	local fileStream=io.open(fileName,FREAD)
+	local file=io.read(fileStream,0,io.size(fileStream))
+	for i=1,#file do
+		typeChar(string.sub(file,i,i))()
+	--		Screen.clear(TOP_SCREEN)
+	--Screen.debugPrint(5,20,#file,white,TOP_SCREEN)
+	--Screen.debugPrint(5,5,i,white,TOP_SCREEN)
 	end
+io.close(fileStream)
 end
-
-
-
-
-menuButton=
-{
-	New_Project= 
-		function ()
-			project=System.startKeyboard("Project Name")
-			System.currentDirectory("/3ds/SLIDE3DS/projects/")
-			if System.doesFileExist(project)
-			then
-				return "Project name taken!"
-			end
-			System.createDirectory(project)
-			
-		end
-	,
-
-	Load_Project=
-		function()
-			project=listMenu(System.listDirectory("/3ds/SLIDE3DS/projects/"))
-			if #project>0
-			then
-				System.currentDirectory("/3ds/SLIDE3DS/projects/"..project)
-				workProject()
-			else
-				return "No projects :("
-			end
-		end
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function mainMenu()
-	local menuDo =""
-	repeat
-	Screen.clear(BOTTOM_SCREEN)
-	Screen.debugPrint(5,5,white,"SLIDE3DS",BOTTOM_SCREEN)
-	Screen.debugPrint(5,20,white,"By: Roboman")
-	Screen.debugPrint(5,35,white,menuDo)
-	menuDo=listMenu({"Load_Project","New_Project","Restore_Backup"})
-	
-	menuDo=menuButton[menuDo]()
-	until false
-	end
-
-
-
-
-
-
-
-
-
 
 function listMenu(list)
 	local c=1
@@ -265,9 +197,7 @@ function moveRight() --moves the cursor right
 			cX=cX-1
 			sX=sX+1
 		end
-	elseif moveDown() then sX=0 cX=1	--if at the end of the line tries to move down.  if successful sets x to beginning of 
-
-line
+	elseif moveDown() then sX=0 cX=1	--if at the end of the line tries to move down.  if successful sets x to beginning of line
 	else return
 	end
 	return true
@@ -286,6 +216,9 @@ function typeChar(char)
 
 	if char=="\t" then
 		return typeTab
+	end
+	if char=="\n" then
+		return typeEnter
 	end
 
 	return function() 
@@ -313,9 +246,7 @@ function backspace()
 end
 
 function typeDelete()
-	if moveRight() then backspace() end 	--delete is just backspace after pressing right -that is, if pressing right did 
-
-anything
+	if moveRight() then backspace() end 	--delete is just backspace after pressing right -that is, if pressing right did anything
 end
 
 function tabulate(y)
@@ -359,8 +290,6 @@ function typeEnter()
 	moveDown()
 	sX=0 cX=1
 end
-
-mainMenu()
 
 
 function Keyboard()
@@ -463,20 +392,7 @@ function Keyboard()
 end
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-editText = function()
-
+loadText("/document.txt")
 	while true do
 	
 
@@ -504,4 +420,3 @@ editText = function()
 			Screen.flip()
 		if Controls.check(pad,KEY_B) then crash() end --faster restarting in citra
 	end
-end
